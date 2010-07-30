@@ -16,7 +16,6 @@ import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
@@ -38,7 +37,6 @@ public class ImageCapture extends Activity implements LocationListener {
         
         lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-
             Log.i("PictureDemo", "Starting up GPS location provider...");
             startGPS();
         }
@@ -51,7 +49,7 @@ public class ImageCapture extends Activity implements LocationListener {
 
     private void startGPS() {
         lm.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                2000, 10,
+                1000, 10,
                 this);
     }
     
@@ -64,13 +62,19 @@ public class ImageCapture extends Activity implements LocationListener {
         }
     }
     public void onProviderEnabled(String provider) {
-        Log.i("PictureDemo", "Provider enabled.");
+        Log.d("PictureDemo", "Provider enabled.");
     }
     public void onProviderDisabled(String provider) {
-        Log.i("PictureDemo", "Provider disabled.");
+        Log.d("PictureDemo", "Provider disabled.");
     }
     public void onLocationChanged(Location location) {
         Log.i("PictureDemo", "Location changed to " + location.getLatitude() + "," + location.getLongitude());
+        
+        Parameters parameters = camera.getParameters();
+        parameters.setGpsLatitude(location.getLatitude());
+        parameters.setGpsLongitude(location.getLongitude());
+        parameters.setGpsTimestamp(location.getTime());
+        camera.setParameters(parameters);
     }
     
     @Override
@@ -105,6 +109,39 @@ public class ImageCapture extends Activity implements LocationListener {
     private void takePicture() {
         camera.takePicture(null, null, photoCallback);
     }
+    
+    private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.05;
+        double targetRatio = (double) w / h;
+        if (sizes == null) return null;
+
+        Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+
+        int targetHeight = h;
+
+        // Try to find an size match aspect ratio and size
+        for (Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        // Cannot find the one match the aspect ratio, ignore the requirement
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
+    }
 
     SurfaceHolder.Callback surfaceCallback=new SurfaceHolder.Callback() {
         public void surfaceCreated(SurfaceHolder holder) {
@@ -119,7 +156,6 @@ public class ImageCapture extends Activity implements LocationListener {
 //                }
 //                Log.i("PictureDemo", "Preview window: " + holder.getSurfaceFrame().width() + "x" + holder.getSurfaceFrame().height());
 //                parameters.setPreviewSize(480, 320);
-                parameters.setRotation(270);
                 parameters.setPictureFormat(PixelFormat.JPEG);
                 camera.setParameters(parameters);
                 camera.setPreviewDisplay(previewHolder);
@@ -137,6 +173,13 @@ public class ImageCapture extends Activity implements LocationListener {
                                      int format, int width,
                                      int height) {
             Log.i("PictureDemo", "Surface changed: " + width + "x" + height);
+
+            Parameters parameters = camera.getParameters();
+            List<Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
+            Size optimal = getOptimalPreviewSize(supportedPreviewSizes, width, height);
+            parameters.setPreviewSize(optimal.width, optimal.height);
+            camera.setParameters(parameters);
+            
             camera.startPreview();
         }
 
