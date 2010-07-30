@@ -2,12 +2,14 @@ package com.yellowbkpk.geo;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.List;
 
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
+import android.hardware.Camera.Size;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -37,7 +39,7 @@ public class ImageCapture extends Activity implements LocationListener {
         lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 
-            Log.i("PictureDemo", "starting up GPS location provider...");
+            Log.i("PictureDemo", "Starting up GPS location provider...");
             startGPS();
         }
         
@@ -56,6 +58,9 @@ public class ImageCapture extends Activity implements LocationListener {
     public void onStatusChanged(String provider, int status, Bundle extras) {
         if(LocationProvider.AVAILABLE == status) {
             Log.i("PictureDemo", "Satellite fix.");
+            Toast
+                .makeText(ImageCapture.this, "GPS Fix", Toast.LENGTH_LONG)
+                .show();
         }
     }
     public void onProviderEnabled(String provider) {
@@ -65,7 +70,7 @@ public class ImageCapture extends Activity implements LocationListener {
         Log.i("PictureDemo", "Provider disabled.");
     }
     public void onLocationChanged(Location location) {
-        Log.i("PictureDemo", "Location changed to " + location);
+        Log.i("PictureDemo", "Location changed to " + location.getLatitude() + "," + location.getLongitude());
     }
     
     @Override
@@ -109,9 +114,12 @@ public class ImageCapture extends Activity implements LocationListener {
             try {
                 Parameters parameters = camera.getParameters();
 //                List<Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
-//                Size size = supportedPreviewSizes.get(0);
-//                Log.i("PictureDemo", "Using preview size " + size.height + "h " + size.width + "w");
-//                parameters.setPreviewSize(size.width, size.height);
+//                for (Size size : supportedPreviewSizes) {
+//                    Log.i("PictureDemo", "Supported preview: " + size.width + "x" + size.height);
+//                }
+//                Log.i("PictureDemo", "Preview window: " + holder.getSurfaceFrame().width() + "x" + holder.getSurfaceFrame().height());
+//                parameters.setPreviewSize(480, 320);
+                parameters.setRotation(270);
                 parameters.setPictureFormat(PixelFormat.JPEG);
                 camera.setParameters(parameters);
                 camera.setPreviewDisplay(previewHolder);
@@ -128,6 +136,7 @@ public class ImageCapture extends Activity implements LocationListener {
         public void surfaceChanged(SurfaceHolder holder,
                                      int format, int width,
                                      int height) {
+            Log.i("PictureDemo", "Surface changed: " + width + "x" + height);
             camera.startPreview();
         }
 
@@ -148,8 +157,9 @@ public class ImageCapture extends Activity implements LocationListener {
     class SavePhotoTask extends AsyncTask<byte[], String, String> {
         @Override
         protected String doInBackground(byte[]... jpeg) {
-            File photo=new File(Environment.getExternalStorageDirectory(),
+            File photo=new File(getExternalFilesDir("photos"),
                                                     "photo.jpg");
+//                                                    System.currentTimeMillis() + ".jpg");
 
             if (photo.exists()) {
                 photo.delete();
@@ -164,6 +174,8 @@ public class ImageCapture extends Activity implements LocationListener {
             catch (java.io.IOException e) {
                 Log.e("PictureDemo", "Exception in photoCallback", e);
             }
+            
+            Log.i("PictureDemo", "Saved to " + photo.getAbsolutePath());
 
             return(null);
         }
