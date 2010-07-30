@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.Window;
 import android.widget.Toast;
 
 public class ImageCapture extends Activity implements LocationListener {
@@ -33,6 +34,9 @@ public class ImageCapture extends Activity implements LocationListener {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        
         setContentView(R.layout.main);
         
         lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
