@@ -16,7 +16,8 @@ import android.location.LocationProvider;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.Display;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
@@ -98,6 +99,8 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+        Surface.setOrientation(Display.DEFAULT_DISPLAY, Surface.ROTATION_270);
+        
         // Now that the size is known, set up the camera parameters and begin
         // the preview.
         Camera.Parameters parameters = mCamera.getParameters();
