@@ -27,15 +27,18 @@ import android.widget.Toast;
 
 class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationListener, SensorEventListener {
     private SurfaceHolder mHolder;
+    private DrawOnTop mStatus;
     private Camera mCamera;
     private LocationManager lm;
     private SensorManager sm;
     private Sensor orientSensor;
     private volatile float[] orientation;
 
-    Preview(Context context) {
+    Preview(Context context, DrawOnTop draw) {
         super(context);
 
+        mStatus = draw;
+        
         // Install a SurfaceHolder.Callback so we get notified when the
         // underlying surface is created and destroyed.
         mHolder = getHolder();
@@ -195,6 +198,9 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
     public void onLocationChanged(Location location) {
         Log.i("PictureDemo", "Location changed to " + location.getLatitude() + "," + location.getLongitude());
         
+        mStatus.gpsLocation = location;
+        mStatus.invalidate();
+        
         Parameters parameters = mCamera.getParameters();
         parameters.setGpsLatitude(location.getLatitude());
         parameters.setGpsLongitude(location.getLongitude());
@@ -229,6 +235,8 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
     @Override
     public void onSensorChanged(SensorEvent event) {
         orientation = event.values;
+        mStatus.heading = event.values[0];
+        mStatus.invalidate();
     }
 
 }
