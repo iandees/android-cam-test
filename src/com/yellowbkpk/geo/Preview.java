@@ -17,6 +17,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.media.ExifInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -29,7 +30,8 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
     private Camera mCamera;
     private LocationManager lm;
     private SensorManager sm;
-    private Sensor orientation;
+    private Sensor orientSensor;
+    private volatile float[] orientation;
 
     Preview(Context context) {
         super(context);
@@ -58,6 +60,13 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
         mCamera = Camera.open();
         try {
            mCamera.setPreviewDisplay(holder);
+           
+           Parameters parameters = mCamera.getParameters();
+           List<Size> supportedPictureSizes = parameters.getSupportedPictureSizes();
+           Size size = supportedPictureSizes.get(0);
+           parameters.setPictureSize(size.width, size.height);
+           mCamera.setParameters(parameters);
+           
         } catch (IOException exception) {
             mCamera.release();
             mCamera = null;
@@ -156,6 +165,14 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
             }
             
             Log.i("PictureDemo", "Saved to " + photo.getAbsolutePath());
+            
+            try {
+                ExifInterface iff = new ExifInterface(photo.getAbsolutePath());
+                iff.setAttribute("Orientation", Float.toString(orientation[0]));
+                iff.saveAttributes();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             return(null);
         }
@@ -187,8 +204,8 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
     }
     
     void startCompass() {
-        orientation = sm.getSensorList(Sensor.TYPE_ORIENTATION).get(0);
-        sm.registerListener(this, orientation, SensorManager.SENSOR_DELAY_GAME);
+        orientSensor = sm.getSensorList(Sensor.TYPE_ORIENTATION).get(0);
+        sm.registerListener(this, orientSensor, SensorManager.SENSOR_DELAY_GAME);
     }
 
     void startGPS() {
@@ -211,8 +228,7 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        float[] values = event.values;
-        Log.i("PictureDemo", "sensorChanged (" + values[0] + ", " + values[1] + ", " + values[2] + ")");
+        orientation = event.values;
     }
 
 }
