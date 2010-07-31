@@ -7,6 +7,10 @@ import java.util.List;
 
 import android.content.Context;
 import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.location.Location;
@@ -16,16 +20,16 @@ import android.location.LocationProvider;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
 
-class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationListener {
+class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationListener, SensorEventListener {
     private SurfaceHolder mHolder;
     private Camera mCamera;
     private LocationManager lm;
+    private SensorManager sm;
+    private Sensor orientation;
 
     Preview(Context context) {
         super(context);
@@ -40,6 +44,11 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
         if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             Log.i("PictureDemo", "Starting up GPS location provider...");
             startGPS();
+        }
+        
+        sm = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+        if (!sm.getSensorList(Sensor.TYPE_ORIENTATION).isEmpty()) {
+            startCompass();
         }
     }
 
@@ -57,6 +66,9 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
+        stopGPS();
+        stopCompass();
+        
         // Surface will be destroyed when we return, so stop the preview.
         // Because the CameraDevice object is not a shared resource, it's very
         // important to release it when the activity is paused.
@@ -174,6 +186,10 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
         mCamera.setParameters(parameters);
     }
     
+    void startCompass() {
+        orientation = sm.getSensorList(Sensor.TYPE_ORIENTATION).get(0);
+        sm.registerListener(this, orientation, SensorManager.SENSOR_DELAY_GAME);
+    }
 
     void startGPS() {
         lm.requestLocationUpdates(LocationManager.GPS_PROVIDER,
@@ -183,6 +199,20 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
 
     void stopGPS() {
         lm.removeUpdates(this);
+    }
+
+    void stopCompass() {
+        sm.unregisterListener(this);
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        float[] values = event.values;
+        Log.i("PictureDemo", "sensorChanged (" + values[0] + ", " + values[1] + ", " + values[2] + ")");
     }
 
 }
