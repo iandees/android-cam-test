@@ -99,8 +99,6 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-        Surface.setOrientation(Display.DEFAULT_DISPLAY, Surface.ROTATION_270);
-        
         // Now that the size is known, set up the camera parameters and begin
         // the preview.
         Camera.Parameters parameters = mCamera.getParameters();
@@ -171,6 +169,7 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
         Parameters parameters = mCamera.getParameters();
         parameters.setGpsLatitude(location.getLatitude());
         parameters.setGpsLongitude(location.getLongitude());
+        parameters.setGpsAltitude(location.getAltitude());
         parameters.setGpsTimestamp(location.getTime());
         mCamera.setParameters(parameters);
     }
