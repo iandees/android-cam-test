@@ -147,8 +147,8 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback, LocationLis
         @Override
         protected String doInBackground(byte[]... jpeg) {
             File photo=new File(getContext().getExternalFilesDir("photos"),
-                                                    "photo.jpg");
-//                                                    System.currentTimeMillis() + ".jpg");
+//                                                    "photo.jpg");
+                                                    (System.currentTimeMillis() / 1000L) + ".jpg");
 
             if (photo.exists()) {
                 photo.delete();
